@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using QuoterApp.Cache;
+using QuoterApp.Database;
 using QuoterApp.MarketOrderSource;
 using QuoterApp.Models;
 
@@ -21,6 +22,7 @@ namespace QuoterApp.Quoter
             _marketOrderSource = marketOrderSource ?? throw new ArgumentNullException(nameof(marketOrderSource));
             _marketOrdersCache = marketOrdersCache ?? throw new ArgumentNullException(nameof(marketOrdersCache));
 
+            CacheMarketOrdersFromDb();
             marketOrderSource.MarketOrderReceived += OnMarketOrderReceived;
 
             _orderFetchingThread = new Thread(FetchMarketOrders);
@@ -109,6 +111,7 @@ namespace QuoterApp.Quoter
         {
             try
             {
+                FileCsvHelper.Write(new List<MarketOrder>() { e.MarketOrder }, Constants.Constants.MarketOrdersDbPath);
                 UpdateMarketOrdersCache(e.MarketOrder);
             }
             catch (Exception ex)
@@ -153,6 +156,25 @@ namespace QuoterApp.Quoter
             catch (Exception ex)
             {
                 Console.WriteLine($"Error updating market orders cache: {ex.Message}");
+                throw;
+            }
+        }
+
+        private void CacheMarketOrdersFromDb()
+        {
+            try
+            {
+                lock (lockObject)
+                {
+                    FileCsvHelper.Read(Constants.Constants.MarketOrdersDbPath, (MarketOrder marketOrder) =>
+                    {
+                        UpdateMarketOrdersCache(marketOrder);
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error while caching market orders from Db: {ex.Message}");
                 throw;
             }
         }

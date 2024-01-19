@@ -17,6 +17,7 @@ namespace QuoterApp
                 var gq = new YourQuoter(marketOrderSource, marketOrdersCache);
                 var qty = 120;
 
+                Console.WriteLine($"Will sleep for 10 seconds, for available orders to come in ...");
                 Thread.Sleep(10000);
 
                 var quote = gq.GetQuote("DK50782120", qty);
